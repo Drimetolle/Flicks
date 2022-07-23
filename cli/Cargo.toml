@@ -1,17 +1,12 @@
 [package]
-name = "Flicks"
+name = "flicks"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# serenity = "0.11"
 tokio = { version = "1.19.2", features = ["full"] }
-# twilight-model = "0.11.0"
-# twilight-gateway = "0.11.0"
-# twilight-http = "0.11.0"
-# twilight-cache-inmemory = "0.11.0"
 futures = "0.3.21"
-serenity = "0.11"
-dotenv = "0.15.0"
+dotenv_codegen = "0.15.0"
+flicks-core = { path = "../core", version = "=0.1.0" }
