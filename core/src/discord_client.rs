@@ -15,4 +15,20 @@ impl DiscordClient {
             client
         }
     }
+
+    pub async fn change_user_picture(&self, image_id: String) -> Result<(), serenity::Error> {
+        let user = self.client.get_current_user().await;
+
+        match user {
+            Ok(mut user) => {
+                let operation_result = user.edit(&self.client, |p| p.avatar(Some(&image_id))).await;
+
+                match operation_result {
+                    Err(err) => Err(err),
+                    _ => Ok(())
+                }
+            },
+            Err(err) => Err(err)
+        }
+    }
 }
