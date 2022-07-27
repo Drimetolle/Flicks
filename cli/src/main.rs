@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::PathBuf;
 use flicks_core::discord_client::DiscordClient;
-use flicks_core::avatars_providers::avatars_providers::{AvatarProvider, AvatarFileProvider};
+mod avatar_providers;
+use crate::avatar_providers::{AvatarProvider, AvatarFileProvider};
 
 #[macro_use]
 extern crate dotenv_codegen;

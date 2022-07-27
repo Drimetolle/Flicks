@@ -1,6 +1,5 @@
 use std::path::Path;
-
-use crate::avatars_providers::image::Image;
+use flicks_core::image::Image;
 
 pub trait AvatarProvider {
     fn get(&self, id: impl AsRef<str>) -> Option<Image>;
@@ -21,11 +20,14 @@ impl AvatarProvider for AvatarFileProvider {
         let name = id.as_ref().to_string();
         let path = Path::new(&self.base_path).join(&name);
 
-        let avatar = serenity::utils::read_image(path);
+        // TODO implement read file as base64 
+        // let avatar = serenity::utils::read_image(path);
 
-        match avatar {
-            Ok(base64_image) => Some(Image::new(name, base64_image)),
-            Err(_) => None
-        }
+        // match avatar {
+        //     Ok(base64_image) => Some(Image::new(name, base64_image)),
+        //     Err(_) => None
+        // }
+
+        None
     }
 }
