@@ -1,6 +1,6 @@
 use serenity::http::{Http, HttpBuilder};
 
-use crate::avatars_providers::image::Image;
+use super::image::Image;
 
 pub struct DiscordClient {
     client: Http,

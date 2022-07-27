@@ -1,5 +1,11 @@
+use std::path::PathBuf;
 use flicks_core::discord_client::DiscordClient;
-use flicks_core::avatars_providers::avatars_providers::{AvatarProvider, AvatarFileProvider};
+
+mod avatar_providers;
+use crate::avatar_providers::{AvatarProvider, AvatarFileProvider};
+
+mod file_repository;
+use crate::file_repository::FileRepository;
 
 #[macro_use]
 extern crate dotenv_codegen;
@@ -8,10 +14,18 @@ extern crate dotenv_codegen;
 async fn main() {
     let token = dotenv!("ACCESS_TOKEN");
     let base_path = dotenv!("BASE_PATH");
-    let image = dotenv!("IMAGE_NAME");
-    
+
+    let repository = FileRepository::new(base_path.to_string());
+
     let client = DiscordClient::new(token);
-    let avatar_provider = AvatarFileProvider::new(base_path.to_string());
-    let image = avatar_provider.get(image);
-    client.change_user_picture(image.unwrap()).await;
+    let avatar_provider = AvatarFileProvider::new(repository);
+
+    let image = avatar_provider.get();
+
+    let result = client.change_user_picture(image.unwrap()).await;
+
+    match result {
+        Err(err) => panic!("{:?}", err),
+        _ => println!("Avatar updated sucsesfully")
+    }
 }
