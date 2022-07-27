@@ -1,49 +1,37 @@
-use std::path::Path;
 use flicks_core::image::Image;
-use std::fs::File;
-use std::ffi::OsStr;
-use std::io::Read;
+use crate::FileRepository;
 
 pub trait AvatarProvider {
-    fn get(&self, id: impl AsRef<str>) -> Option<Image>;
+    fn get(&self) -> Option<Image>;
 }
 
 pub struct AvatarFileProvider {
-    base_path: String,
+    repository: Box<FileRepository>,
 }
 
 impl AvatarFileProvider{
-    pub fn new(base_path: String) -> Self {
-        Self { base_path }
+    pub fn new(repository: FileRepository) -> Self {
+        Self { repository: Box::new(repository) }
     }
 }
 
 impl AvatarProvider for AvatarFileProvider {
-    fn get(&self, id: impl AsRef<str>) -> Option<Image> {
-        let name = id.as_ref().to_string();
-        let path = Path::new(&self.base_path).join(&name);
+    fn get(&self) -> Option<Image> {
+        let paths = self.repository.get_list_of_images();
+        let path = paths.first();
 
-        let avatar = self.read_image(path.as_ref());
+        if path.is_none() {
+            return None;
+        }
 
-        match avatar {
-            Ok(base64_image) => Some(Image::new(name, base64_image)),
+        let path = path.unwrap();
+        let avatar = self.repository.read_image(&path);
+
+        let result = match avatar {
+            Ok(base64_image) => Some(Image::new(path.file_name().unwrap().to_str().unwrap().to_string(), base64_image)),
             Err(_) => None
         };
 
-        None
-    }
-}
-
-impl AvatarFileProvider {
-    fn read_image(&self, path: &Path) -> Result<String, std::io::Error> {
-        let mut v = Vec::default();
-        let mut f = File::open(path).unwrap();
-    
-        drop(f.read_to_end(&mut v));
-    
-        let b64 = base64::encode(&v);
-        let ext = if path.extension() == Some(OsStr::new("png")) { "png" } else { "jpg" };
-    
-        Ok(format!("data:image/{};base64,{}", ext, b64))
+        result
     }
 }

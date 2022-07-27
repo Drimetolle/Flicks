@@ -15,18 +15,12 @@ async fn main() {
     let token = dotenv!("ACCESS_TOKEN");
     let base_path = dotenv!("BASE_PATH");
 
-    let repository = FileRepository {};
-    let paths = repository.get_list_of_images(base_path.to_string());
-    let path = paths.first();
-
-    if path.is_none() {
-        panic!("Not presented any image");
-    }
+    let repository = FileRepository::new(base_path.to_string());
 
     let client = DiscordClient::new(token);
-    let avatar_provider = AvatarFileProvider::new(base_path.to_string());
+    let avatar_provider = AvatarFileProvider::new(repository);
 
-    let image = avatar_provider.get(path.unwrap().to_str().unwrap());
+    let image = avatar_provider.get();
 
     let result = client.change_user_picture(image.unwrap()).await;
 
