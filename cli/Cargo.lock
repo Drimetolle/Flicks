@@ -232,6 +232,7 @@ dependencies = [
  "dotenv_codegen",
  "flicks-core",
  "futures",
+ "rand",
  "tempfile",
  "tokio",
 ]
