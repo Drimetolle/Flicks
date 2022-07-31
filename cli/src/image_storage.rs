@@ -39,7 +39,6 @@ impl TakeImageCommand for TakeImage {
         let image = self.file_repository.read_image(image_path)?;
 
         let filename = Some(image_path)
-            .as_ref()
             .and_then(|name| name.file_name())
             .and_then(|name| name.to_str())
             .unwrap();
