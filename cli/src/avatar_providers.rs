@@ -1,24 +1,25 @@
 use flicks_core::image::Image;
-use crate::FileRepository;
+use crate::{image_storage::ImageStorage};
 use rand::seq::SliceRandom;
+use flicks_core::command::TakeImageCommand;
 
 pub trait AvatarProvider {
     fn get(&self) -> Option<Image>;
 }
 
 pub struct AvatarFileProvider {
-    repository: Box<FileRepository>,
+    storage: Box<ImageStorage>,
 }
 
 impl AvatarFileProvider{
-    pub fn new(repository: FileRepository) -> Self {
-        Self { repository: Box::new(repository) }
+    pub fn new(storage: ImageStorage) -> Self {
+        Self { storage: Box::new(storage) }
     }
 }
 
 impl AvatarProvider for AvatarFileProvider {
     fn get(&self) -> Option<Image> {
-        let paths = self.repository.get_list_of_images();
+        let paths = self.storage.get_list_of_images();
         let path = paths.choose(&mut rand::thread_rng());
 
         if path.is_none() {
@@ -26,11 +27,19 @@ impl AvatarProvider for AvatarFileProvider {
         }
 
         let path = path.unwrap();
-        let avatar = self.repository.read_image(&path);
+        let avatar = self.storage.get_image(path.to_owned());
 
-        let result = match avatar {
-            Ok(base64_image) => Some(Image::new(path.file_name().unwrap().to_str().unwrap().to_string(), base64_image)),
-            Err(_) => None
+        let result = match avatar.take() {
+            Ok(command) => Some(command),
+            Err(_) => {
+                let result = avatar.rollback();
+                
+                if result.is_err() {
+                    panic!("Something went wrong while rollback operation: {}", result.err().unwrap())
+                }
+
+                None
+            }
         };
 
         result

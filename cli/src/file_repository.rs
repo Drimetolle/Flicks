@@ -4,19 +4,16 @@ use std::fs::File;
 use std::io::Read;
 use std::ffi::OsStr;
 
-pub struct FileRepository {
-    base_path: String
-}
+#[derive(Clone)]
+pub struct FileRepository;
 
 impl FileRepository {
-    pub fn new(base_path: String) -> Self {
-        Self {
-            base_path
-        }
+    pub fn new() -> Self {
+        Self { }
     }
 
-    pub fn get_list_of_images(&self) -> Vec<PathBuf> {
-        let paths: Vec<PathBuf> = fs::read_dir(&self.base_path)
+    pub fn get_list_of_images(&self, path: impl AsRef<str>) -> Vec<PathBuf> {
+        let paths: Vec<PathBuf> = fs::read_dir(path.as_ref())
         .unwrap_or_else(|error| {
             panic!("Directory posibble undefined: {:?}", error);
         })
@@ -51,5 +48,9 @@ impl FileRepository {
         let ext = if path.extension() == Some(OsStr::new("png")) { "png" } else { "jpg" };
     
         Ok(format!("data:image/{};base64,{}", ext, b64))
+    }
+
+    pub fn move_image(&self, path_from: &PathBuf, path_to: &PathBuf) -> Result<(), std::io::Error> {
+        fs::rename(path_from, path_to)
     }
 }
