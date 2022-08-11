@@ -32,7 +32,11 @@ impl AvatarProvider for AvatarFileProvider {
         let result = match avatar.take() {
             Ok(command) => Some(command),
             Err(_) => {
-                avatar.rollback();
+                let result = avatar.rollback();
+                
+                if result.is_err() {
+                    panic!("Something went wrong while rollback operation: {}", result.err().unwrap())
+                }
 
                 None
             }

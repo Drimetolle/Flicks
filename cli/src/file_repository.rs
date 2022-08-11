@@ -49,4 +49,8 @@ impl FileRepository {
     
         Ok(format!("data:image/{};base64,{}", ext, b64))
     }
+
+    pub fn move_image(&self, path_from: &PathBuf, path_to: &PathBuf) -> Result<(), std::io::Error> {
+        fs::rename(path_from, path_to)
+    }
 }
