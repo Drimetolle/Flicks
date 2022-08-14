@@ -2,6 +2,15 @@ use flicks_core::command::TakeImageCommand;
 use flicks_core::image::Image;
 use super::FileRepository;
 use std::path::PathBuf;
+use std::fs;
+
+fn create_if_not_exist(path: &PathBuf) -> std::io::Result<()> {
+    if !path.exists() {
+        fs::create_dir(path)?
+    }
+
+    Ok(())
+}
 
 pub struct ImageStorage {
     base_path: PathBuf,
@@ -11,9 +20,22 @@ pub struct ImageStorage {
 
 impl ImageStorage {
     pub fn new(base_path: String, used_images_path: String, file_repository: FileRepository) -> Self {
+        let base_path = PathBuf::from(base_path);
+        let used_images_path = PathBuf::from(used_images_path);
+
+        match create_if_not_exist(&base_path) {
+            Err(err) => panic!("{}", err),
+            _ => ()
+        }
+
+        match create_if_not_exist(&used_images_path) {
+            Err(err) => panic!("{}", err),
+            _ => ()
+        }
+
         Self {
-            base_path: PathBuf::from(base_path),
-            used_images_path: PathBuf::from(used_images_path),
+            base_path,
+            used_images_path,
             file_repository: Box::new(file_repository)
         }
     }
