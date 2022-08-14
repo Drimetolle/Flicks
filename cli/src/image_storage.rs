@@ -4,7 +4,7 @@ use super::FileRepository;
 use std::path::PathBuf;
 
 pub struct ImageStorage {
-    base_path: String,
+    base_path: PathBuf,
     used_images_path: PathBuf,
     file_repository: Box<FileRepository>
 }
@@ -12,7 +12,7 @@ pub struct ImageStorage {
 impl ImageStorage {
     pub fn new(base_path: String, used_images_path: String, file_repository: FileRepository) -> Self {
         Self {
-            base_path,
+            base_path: PathBuf::from(base_path),
             used_images_path: PathBuf::from(used_images_path),
             file_repository: Box::new(file_repository)
         }
@@ -21,8 +21,8 @@ impl ImageStorage {
     pub fn get_image(&self, path: PathBuf) -> TakeImage {
         TakeImage {
             image_path: path,
-            used_images_path: self.used_images_path.clone(),
-            file_repository: Box::new(*self.file_repository.clone())
+            used_images_path: &self.used_images_path,
+            file_repository: &self.file_repository
         }
     }
 
@@ -31,13 +31,13 @@ impl ImageStorage {
     }
 }
 
-pub struct TakeImage {
+pub struct TakeImage<'a> {
     image_path: PathBuf,
-    used_images_path: PathBuf,
-    file_repository: Box<FileRepository>
+    used_images_path: &'a PathBuf,
+    file_repository: &'a FileRepository
 }
 
-impl TakeImageCommand for TakeImage {
+impl<'a> TakeImageCommand for TakeImage<'a> {
     fn take(&self) -> Result<Image, Box<(dyn std::error::Error + 'static)>> { 
         let image_path = &self.image_path;
         let image = self.file_repository.read_image(image_path)?;
@@ -54,7 +54,7 @@ impl TakeImageCommand for TakeImage {
     }
 }
 
-impl TakeImage {
+impl<'a> TakeImage<'a> {
     fn get_file_name(&self) -> &str {
         let filename = Some(&self.image_path)
             .and_then(|name| name.file_name())

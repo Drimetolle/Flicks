@@ -4,7 +4,6 @@ use std::fs::File;
 use std::io::Read;
 use std::ffi::OsStr;
 
-#[derive(Clone)]
 pub struct FileRepository;
 
 impl FileRepository {
@@ -12,8 +11,8 @@ impl FileRepository {
         Self { }
     }
 
-    pub fn get_list_of_images(&self, path: impl AsRef<str>) -> Vec<PathBuf> {
-        let paths: Vec<PathBuf> = fs::read_dir(path.as_ref())
+    pub fn get_list_of_images(&self, path: &PathBuf) -> Vec<PathBuf> {
+        let paths: Vec<PathBuf> = fs::read_dir(path)
         .unwrap_or_else(|error| {
             panic!("Directory posibble undefined: {:?}", error);
         })
