@@ -1,6 +1,6 @@
 use serenity::http::{Http, HttpBuilder};
 
-use super::image::Image;
+use flicks_core::image::Image;
 
 pub struct DiscordClient {
     client: Http,

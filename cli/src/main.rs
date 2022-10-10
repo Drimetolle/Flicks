@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use flicks_core::discord_client::DiscordClient;
+use flicks_discord::discord_client::DiscordClient;
 
 mod avatar_providers;
 use crate::avatar_providers::{AvatarProvider, AvatarFileProvider};
