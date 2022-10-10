@@ -31,6 +31,6 @@ async fn main() {
 
     match result {
         Err(err) => panic!("{:?}", err),
-        _ => println!("Avatar updated sucsesfully")
+        _ => println!("Avatar updated successfully")
     }
 }
