@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-use flicks_core::discord_client::DiscordClient;
+use flicks_discord::discord_client::DiscordClient;
 
 mod avatar_providers;
 use crate::avatar_providers::{AvatarProvider, AvatarFileProvider};
@@ -31,6 +31,6 @@ async fn main() {
 
     match result {
         Err(err) => panic!("{:?}", err),
-        _ => println!("Avatar updated sucsesfully")
+        _ => println!("Avatar updated successfully")
     }
 }
