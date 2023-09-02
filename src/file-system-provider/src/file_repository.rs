@@ -1,5 +1,5 @@
 use std::fs;
-use crate::PathBuf;
+use std::path::PathBuf;
 use std::fs::File;
 use std::io::Read;
 use std::ffi::OsStr;

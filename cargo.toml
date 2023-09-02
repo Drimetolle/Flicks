@@ -7,10 +7,8 @@ edition = "2021"
 tokio = { version = "1.19.2", features = ["full"] }
 futures = "0.3.21"
 dotenv_codegen = "0.15.0"
-flicks-core = { path = "../core/flicks-core", version = "=0.1.0" }
-flicks-discord = { path = "../core/flicks-discord", version = "=0.1.0" }
-base64 = "0.13.0"
-rand = "0.8.5"
+flicks-discord = { path = "./src/core/flicks-discord", version = "=0.1.0" }
+file-system-provider = { path = "./src/file-system-provider", version = "=0.1.0" }
 
 [dev-dependencies]
 tempfile = "3.1.0"
