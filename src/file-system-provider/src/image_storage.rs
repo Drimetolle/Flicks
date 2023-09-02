@@ -1,6 +1,6 @@
 use flicks_core::command::TakeImageCommand;
 use flicks_core::image::Image;
-use super::FileRepository;
+use crate::file_repository::FileRepository;
 use std::path::PathBuf;
 use std::fs;
 
