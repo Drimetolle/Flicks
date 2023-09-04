@@ -1,14 +1,10 @@
 pub struct Image {
     pub name: String,
-    /// A base64-encoded string as the avatar content.
-    pub data: String,
+    pub bytes: Vec<u8>,
 }
 
 impl Image {
-    pub fn new(name: String, data: String) -> Self {
-        Self {
-            name,
-            data
-        }
+    pub fn new(name: String, data: Vec<u8>) -> Self {
+        Self { name, bytes: data }
     }
 }

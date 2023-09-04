@@ -1,7 +1,7 @@
-use flicks_core::image::Image;
-use crate::{image_storage::ImageStorage};
-use rand::seq::SliceRandom;
+use crate::image_storage::ImageStorage;
 use flicks_core::command::TakeImageCommand;
+use flicks_core::image::Image;
+use rand::seq::SliceRandom;
 
 pub trait AvatarProvider {
     fn get(&self) -> Option<Image>;
@@ -11,9 +11,11 @@ pub struct AvatarFileProvider {
     storage: Box<ImageStorage>,
 }
 
-impl AvatarFileProvider{
+impl AvatarFileProvider {
     pub fn new(storage: ImageStorage) -> Self {
-        Self { storage: Box::new(storage) }
+        Self {
+            storage: Box::new(storage),
+        }
     }
 }
 
@@ -33,9 +35,12 @@ impl AvatarProvider for AvatarFileProvider {
             Ok(command) => Some(command),
             Err(_) => {
                 let result = avatar.rollback();
-                
+
                 if result.is_err() {
-                    panic!("Something went wrong while rollback operation: {}", result.err().unwrap())
+                    panic!(
+                        "Something went wrong while rollback operation: {}",
+                        result.err().unwrap()
+                    )
                 }
 
                 None
