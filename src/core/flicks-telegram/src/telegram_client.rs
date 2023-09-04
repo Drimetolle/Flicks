@@ -1,6 +1,8 @@
 use grammers_client::{Client, Config, InitParams, SignInError};
 use grammers_session::Session;
 
+use flicks_core::image::Image;
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 pub struct TelegramClient {
@@ -66,6 +68,23 @@ impl TelegramClient {
                 }
             }
         }
+
+        Ok(())
+    }
+
+    pub async fn change_user_picture(&self, image: Image) -> Result<()> {
+        self.upload(image).await?;
+
+        Ok(())
+    }
+
+    async fn upload(&self, image: Image) -> Result<()> {
+        let mut stream = std::io::Cursor::new(&image.bytes);
+
+        let size = image.bytes.len();
+        self.client
+            .upload_stream(&mut stream, size, image.name)
+            .await?;
 
         Ok(())
     }
