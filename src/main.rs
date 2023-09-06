@@ -32,14 +32,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let avatar_provider = AvatarFileProvider::new(storage);
 
-    let image = avatar_provider.get();
+    let image = avatar_provider.get().unwrap();
 
-    let result = discord_client.change_user_picture(image.unwrap()).await;
+    discord_client.change_user_picture(&image).await?;
+    telegram_client.change_user_picture(&image).await?;
 
-    match result {
-        Err(err) => panic!("{:?}", err),
-        _ => println!("Avatar updated successfully"),
-    }
+    println!("Avatar updated successfully");
 
     Ok(())
 }

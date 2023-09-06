@@ -1,9 +1,12 @@
-use grammers_client::{Client, Config, InitParams, SignInError};
+use grammers_client::{types::media::Uploaded, Client, Config, InitParams, SignInError};
 use grammers_session::Session;
+use grammers_tl_types::types::InputFile;
 
 use flicks_core::image::Image;
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+use std::result::Result;
+
+type ResultInner<T> = Result<T, Box<dyn std::error::Error>>;
 
 pub struct TelegramClient {
     client: Client,
@@ -13,7 +16,7 @@ pub struct TelegramClient {
 }
 
 impl TelegramClient {
-    pub async fn create(api_id: i32, api_hash: String, session_file: String) -> Result<Self> {
+    pub async fn create(api_id: i32, api_hash: String, session_file: String) -> ResultInner<Self> {
         let config = Config {
             session: Session::load_file_or_create(&session_file)?,
             api_id,
@@ -39,7 +42,7 @@ impl TelegramClient {
         phone: String,
         password: String,
         varification_code_callback: fn() -> String,
-    ) -> Result<()> {
+    ) -> ResultInner<()> {
         if !self.client.is_authorized().await? {
             let token = self
                 .client
@@ -72,20 +75,77 @@ impl TelegramClient {
         Ok(())
     }
 
-    pub async fn change_user_picture(&self, image: Image) -> Result<()> {
-        self.upload(image).await?;
+    pub async fn change_user_picture(&self, image: &Image) -> ResultInner<()> {
+        let (file_id, md5_checksum) = self.upload_file(&image.bytes).await?;
+
+        let photo = InputFile {
+            id: file_id,
+            parts: 1,
+            name: image.name.clone(),
+            md5_checksum,
+        };
+        let photo = grammers_tl_types::enums::InputFile::File(photo);
+
+        let me = self
+            .client
+            .invoke(&grammers_tl_types::functions::photos::UploadProfilePhoto {
+                file: Option::from(photo),
+                video: None,
+                video_start_ts: None,
+            })
+            .await?;
+        dbg!(me);
 
         Ok(())
     }
 
-    async fn upload(&self, image: Image) -> Result<()> {
+    // todo use in the future
+    async fn upload(&self, image: Image) -> ResultInner<Uploaded> {
         let mut stream = std::io::Cursor::new(&image.bytes);
 
         let size = image.bytes.len();
-        self.client
+        let uploaded_file = self
+            .client
             .upload_stream(&mut stream, size, image.name)
             .await?;
 
-        Ok(())
+        Ok(uploaded_file)
+    }
+
+    /// Copy&paste from upload_stream
+    async fn upload_file(&self, bytes: &Vec<u8>) -> Result<(i64, String), tokio::io::Error> {
+        const MAX_CHUNK_SIZE: usize = 512 * 1024;
+
+        let file_id = std::time::SystemTime::now()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .expect("system time is before epoch")
+            .as_nanos() as i64;
+
+        let parts = bytes.chunks(MAX_CHUNK_SIZE);
+        let mut md5 = md5::Context::new();
+
+        for (part, chunk) in parts.enumerate() {
+            md5.consume(&bytes);
+            let ok = self
+                .client
+                .invoke(&grammers_tl_types::functions::upload::SaveFilePart {
+                    file_id,
+                    file_part: part as i32,
+                    bytes: chunk.to_owned(),
+                })
+                .await
+                .map_err(|e| tokio::io::Error::new(tokio::io::ErrorKind::Other, e))?;
+
+            if !ok {
+                return Err(tokio::io::Error::new(
+                    tokio::io::ErrorKind::Other,
+                    "server failed to store uploaded data",
+                ));
+            }
+        }
+
+        let md5_checksum = hex::encode(md5.compute());
+
+        Ok((file_id, md5_checksum))
     }
 }

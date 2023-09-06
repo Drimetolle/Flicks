@@ -15,7 +15,7 @@ impl DiscordClient {
         Self { client }
     }
 
-    pub async fn change_user_picture(&self, image: Image) -> Result<(), serenity::Error> {
+    pub async fn change_user_picture(&self, image: &Image) -> Result<(), serenity::Error> {
         let user = self.client.get_current_user().await;
 
         let b64 = base64::encode(&image.bytes);
