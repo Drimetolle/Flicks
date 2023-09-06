@@ -1,8 +1,8 @@
+use crate::file_repository::FileRepository;
 use flicks_core::command::TakeImageCommand;
 use flicks_core::image::Image;
-use crate::file_repository::FileRepository;
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 fn create_if_not_exist(path: &PathBuf) -> std::io::Result<()> {
     if !path.exists() {
@@ -15,28 +15,32 @@ fn create_if_not_exist(path: &PathBuf) -> std::io::Result<()> {
 pub struct ImageStorage {
     base_path: PathBuf,
     used_images_path: PathBuf,
-    file_repository: Box<FileRepository>
+    file_repository: Box<FileRepository>,
 }
 
 impl ImageStorage {
-    pub fn new(base_path: String, used_images_path: String, file_repository: FileRepository) -> Self {
+    pub fn new(
+        base_path: String,
+        used_images_path: String,
+        file_repository: FileRepository,
+    ) -> Self {
         let base_path = PathBuf::from(base_path);
         let used_images_path = PathBuf::from(used_images_path);
 
         match create_if_not_exist(&base_path) {
             Err(err) => panic!("{}", err),
-            _ => ()
+            _ => (),
         }
 
         match create_if_not_exist(&used_images_path) {
             Err(err) => panic!("{}", err),
-            _ => ()
+            _ => (),
         }
 
         Self {
             base_path,
             used_images_path,
-            file_repository: Box::new(file_repository)
+            file_repository: Box::new(file_repository),
         }
     }
 
@@ -44,7 +48,7 @@ impl ImageStorage {
         TakeImage {
             image_path: path,
             used_images_path: &self.used_images_path,
-            file_repository: &self.file_repository
+            file_repository: &self.file_repository,
         }
     }
 
@@ -56,22 +60,26 @@ impl ImageStorage {
 pub struct TakeImage<'a> {
     image_path: PathBuf,
     used_images_path: &'a PathBuf,
-    file_repository: &'a FileRepository
+    file_repository: &'a FileRepository,
 }
 
 impl<'a> TakeImageCommand for TakeImage<'a> {
-    fn take(&self) -> Result<Image, Box<(dyn std::error::Error + 'static)>> { 
+    fn take(&self) -> Result<Image, Box<(dyn std::error::Error + 'static)>> {
         let image_path = &self.image_path;
-        let image = self.file_repository.read_image(image_path)?;
+        let image_bytes = self.file_repository.read_image(image_path)?;
         let filename = self.get_file_name();
 
-        self.file_repository.move_image(image_path, &self.used_images_path.join(filename))?;
+        self.file_repository
+            .move_image(image_path, &self.used_images_path.join(filename))?;
 
-        Ok(Image { name: filename.to_string(), data: image })
+        Ok(Image::new(filename.to_string(), image_bytes))
     }
 
     fn rollback(&self) -> Result<(), Box<(dyn std::error::Error + 'static)>> {
-        self.file_repository.move_image(&self.used_images_path.join(self.get_file_name()), &self.image_path)?;
+        self.file_repository.move_image(
+            &self.used_images_path.join(self.get_file_name()),
+            &self.image_path,
+        )?;
         Ok(())
     }
 }
@@ -82,7 +90,7 @@ impl<'a> TakeImage<'a> {
             .and_then(|name| name.file_name())
             .and_then(|name| name.to_str())
             .unwrap();
-    
+
         return filename;
     }
 }
