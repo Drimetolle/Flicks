@@ -1,9 +1,10 @@
 use flicks_discord::discord_client::DiscordClient;
 use flicks_telegram::telegram_client::TelegramClient;
 
-use file_system_provider::avatar_providers::{AvatarFileProvider, AvatarProvider};
+use file_system_provider::avatar_providers::AvatarFileProvider;
 use file_system_provider::file_repository::FileRepository;
 use file_system_provider::image_storage::ImageStorage;
+use flicks_core::avatar_pipeline::AvatarPipeline;
 
 use std::io::{self, BufRead as _, Write as _};
 
@@ -27,32 +28,34 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let discord_client = DiscordClient::new(token);
     let telegram_client = TelegramClient::create(app_id, api_hash, session_file).await?;
     telegram_client
-        .auth(phone, password, get_varification_code)
+        .auth(phone, password, get_verification_code)
         .await?;
 
     let avatar_provider = AvatarFileProvider::new(storage);
+    let mut pipeline = AvatarPipeline::new(&avatar_provider);
 
-    let image = avatar_provider.get().unwrap();
-
-    discord_client.change_user_picture(&image).await?;
-    telegram_client.change_user_picture(&image).await?;
+    pipeline
+        .add(discord_client)
+        .add(telegram_client)
+        .run()
+        .await?;
 
     println!("Avatar updated successfully");
 
     Ok(())
 }
 
-fn get_varification_code() -> String {
+fn get_verification_code() -> String {
     let stdout = io::stdout();
     let mut stdout = stdout.lock();
-    stdout.write_all("Inter telegram code: ".as_bytes());
-    stdout.flush();
+    let _ = stdout.write_all("Inter telegram code: ".as_bytes());
+    let _ = stdout.flush();
 
     let stdin = io::stdin();
     let mut stdin = stdin.lock();
 
     let mut line = String::new();
-    stdin.read_line(&mut line);
+    let _ = stdin.read_line(&mut line);
 
     line
 }

@@ -1,6 +1,9 @@
+use async_trait::async_trait;
 use serenity::http::{Http, HttpBuilder};
+use std::error::Error;
 use std::{ffi::OsStr, path::Path};
 
+use flicks_core::avatar_pipeline::AvatarChangeStage;
 use flicks_core::image::Image;
 
 pub struct DiscordClient {
@@ -14,8 +17,11 @@ impl DiscordClient {
 
         Self { client }
     }
+}
 
-    pub async fn change_user_picture(&self, image: &Image) -> Result<(), serenity::Error> {
+#[async_trait]
+impl AvatarChangeStage for DiscordClient {
+    async fn change_avatar(&self, image: &Image) -> Result<(), Box<dyn Error>> {
         let user = self.client.get_current_user().await;
 
         let b64 = base64::encode(&image.bytes);
@@ -36,11 +42,11 @@ impl DiscordClient {
                     .await;
 
                 match operation_result {
-                    Err(err) => Err(err),
+                    Err(err) => Err(Box::new(err)),
                     _ => Ok(()),
                 }
             }
-            Err(err) => Err(err),
+            Err(err) => Err(Box::new(err)),
         }
     }
 }
