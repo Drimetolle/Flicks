@@ -1,12 +1,15 @@
 use grammers_client::{types::media::Uploaded, Client, Config, InitParams, SignInError};
 use grammers_session::Session;
 use grammers_tl_types::types::InputFile;
+use std::error::Error;
 
 use flicks_core::image::Image;
 
+use async_trait::async_trait;
+use flicks_core::avatar_pipeline::AvatarChangeStage;
 use std::result::Result;
 
-type ResultInner<T> = Result<T, Box<dyn std::error::Error>>;
+type ResultInner<T> = Result<T, Box<dyn Error>>;
 
 pub struct TelegramClient {
     client: Client,
@@ -41,14 +44,14 @@ impl TelegramClient {
         &self,
         phone: String,
         password: String,
-        varification_code_callback: fn() -> String,
+        verification_code_callback: fn() -> String,
     ) -> ResultInner<()> {
         if !self.client.is_authorized().await? {
             let token = self
                 .client
                 .request_login_code(&phone, self.api_id, &self.api_hash)
                 .await?;
-            let code = varification_code_callback();
+            let code = verification_code_callback();
             let signed_in = self.client.sign_in(&token, &code).await;
 
             match signed_in {
@@ -71,30 +74,6 @@ impl TelegramClient {
                 }
             }
         }
-
-        Ok(())
-    }
-
-    pub async fn change_user_picture(&self, image: &Image) -> ResultInner<()> {
-        let (file_id, md5_checksum) = self.upload_file(&image.bytes).await?;
-
-        let photo = InputFile {
-            id: file_id,
-            parts: 1,
-            name: image.name.clone(),
-            md5_checksum,
-        };
-        let photo = grammers_tl_types::enums::InputFile::File(photo);
-
-        let me = self
-            .client
-            .invoke(&grammers_tl_types::functions::photos::UploadProfilePhoto {
-                file: Option::from(photo),
-                video: None,
-                video_start_ts: None,
-            })
-            .await?;
-        dbg!(me);
 
         Ok(())
     }
@@ -147,5 +126,30 @@ impl TelegramClient {
         let md5_checksum = hex::encode(md5.compute());
 
         Ok((file_id, md5_checksum))
+    }
+}
+
+#[async_trait]
+impl AvatarChangeStage for TelegramClient {
+    async fn change_avatar(&self, image: &Image) -> Result<(), Box<dyn Error>> {
+        let (file_id, md5_checksum) = self.upload_file(&image.bytes).await?;
+
+        let photo = InputFile {
+            id: file_id,
+            parts: 1,
+            name: image.name.clone(),
+            md5_checksum,
+        };
+        let photo = grammers_tl_types::enums::InputFile::File(photo);
+
+        self.client
+            .invoke(&grammers_tl_types::functions::photos::UploadProfilePhoto {
+                file: Option::from(photo),
+                video: None,
+                video_start_ts: None,
+            })
+            .await?;
+
+        Ok(())
     }
 }

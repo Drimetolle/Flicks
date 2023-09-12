@@ -7,3 +7,4 @@ edition = "2021"
 base64 = "0.13.0"
 serenity = "0.11"
 flicks-core = { path = "../flicks-core", version = "=0.1.0" }
+async-trait = "0.1.73"

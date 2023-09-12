@@ -1,11 +1,9 @@
 use crate::image_storage::ImageStorage;
+use async_trait::async_trait;
+use flicks_core::avatar_pipeline::AvatarProvider;
 use flicks_core::command::TakeImageCommand;
 use flicks_core::image::Image;
 use rand::seq::SliceRandom;
-
-pub trait AvatarProvider {
-    fn get(&self) -> Option<Image>;
-}
 
 pub struct AvatarFileProvider {
     storage: Box<ImageStorage>,
@@ -19,8 +17,9 @@ impl AvatarFileProvider {
     }
 }
 
+#[async_trait]
 impl AvatarProvider for AvatarFileProvider {
-    fn get(&self) -> Option<Image> {
+    async fn get(&self) -> Option<Image> {
         let paths = self.storage.get_list_of_images();
         let path = paths.choose(&mut rand::thread_rng());
 
