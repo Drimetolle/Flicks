@@ -5,15 +5,31 @@ use std::{ffi::OsStr, path::Path};
 
 use flicks_core::avatar_pipeline::AvatarChangeStage;
 use flicks_core::image::Image;
+use reqwest::{Client};
+use reqwest::header::{HeaderMap, HeaderValue};
 
 pub struct DiscordClient {
     client: Http,
 }
 
 impl DiscordClient {
-    pub fn new(token: impl AsRef<str>) -> Self {
-        let mut client = HttpBuilder::new("").ratelimiter_disabled(true).build();
-        client.token = token.as_ref().to_string();
+    pub fn new(token: String, super_properties_header: String) -> Self {
+        let mut headers = HeaderMap::new();
+
+        let header_value = HeaderValue::from_str(token.as_str()).expect("Invalid Authorization header");
+        headers.insert("Authorization", header_value);
+
+        let header_value = HeaderValue::from_str(super_properties_header.as_str()).expect("Invalid X-Super-Properties header");
+        headers.insert("X-Super-Properties", header_value);
+
+        let client = Client::builder()
+            .default_headers(headers)
+            .use_rustls_tls()
+            .build()
+            .expect("Cannot build http client");
+
+        let mut client = HttpBuilder::new("").client(client).ratelimiter_disabled(true).build();
+        client.token = token;
 
         Self { client }
     }
