@@ -1,4 +1,4 @@
-use grammers_client::{types::media::Uploaded, Client, Config, InitParams, SignInError};
+use grammers_client::{Client, Config, InitParams, SignInError};
 use grammers_session::Session;
 use grammers_tl_types::types::InputFile;
 use std::error::Error;
@@ -78,22 +78,16 @@ impl TelegramClient {
         Ok(())
     }
 
-    // todo use in the future
-    async fn upload(&self, image: Image) -> ResultInner<Uploaded> {
-        let mut stream = std::io::Cursor::new(&image.bytes);
-
-        let size = image.bytes.len();
-        let uploaded_file = self
-            .client
-            .upload_stream(&mut stream, size, image.name)
-            .await?;
-
-        Ok(uploaded_file)
-    }
-
-    /// Copy&paste from upload_stream
-    async fn upload_file(&self, bytes: &Vec<u8>) -> Result<(i64, String), tokio::io::Error> {
+    async fn upload_file(&self, name: String, bytes: &Vec<u8>) -> Result<InputFile, tokio::io::Error> {
         const MAX_CHUNK_SIZE: usize = 512 * 1024;
+        const BIG_FILE_SIZE: usize = 10 * 1024 * 1024;
+
+        if bytes.len() > BIG_FILE_SIZE {
+            return Err(tokio::io::Error::new(
+                tokio::io::ErrorKind::InvalidData,
+                "Big files are not yet supported",
+            ));
+        }
 
         let file_id = std::time::SystemTime::now()
             .duration_since(std::time::SystemTime::UNIX_EPOCH)
@@ -103,8 +97,11 @@ impl TelegramClient {
         let parts = bytes.chunks(MAX_CHUNK_SIZE);
         let mut md5 = md5::Context::new();
 
+        let mut total_parts = 0;
         for (part, chunk) in parts.enumerate() {
-            md5.consume(&bytes);
+            total_parts += 1;
+            md5.consume(&chunk);
+
             let ok = self
                 .client
                 .invoke(&grammers_tl_types::functions::upload::SaveFilePart {
@@ -125,21 +122,19 @@ impl TelegramClient {
 
         let md5_checksum = hex::encode(md5.compute());
 
-        Ok((file_id, md5_checksum))
+        Ok(InputFile {
+            id: file_id,
+            parts: total_parts,
+            name,
+            md5_checksum,
+        })
     }
 }
 
 #[async_trait]
 impl AvatarChangeStage for TelegramClient {
     async fn change_avatar(&self, image: &Image) -> Result<(), Box<dyn Error>> {
-        let (file_id, md5_checksum) = self.upload_file(&image.bytes).await?;
-
-        let photo = InputFile {
-            id: file_id,
-            parts: 1,
-            name: image.name.clone(),
-            md5_checksum,
-        };
+        let photo = self.upload_file(image.name.clone(), &image.bytes).await?;
         let photo = grammers_tl_types::enums::InputFile::File(photo);
 
         self.client
