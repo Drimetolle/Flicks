@@ -4,8 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-base64 = "0.13.0"
-serenity = "0.11"
+base64 = "0.22.1"
 flicks-core = { path = "../flicks-core", version = "=0.1.0" }
 async-trait = "0.1.73"
-reqwest = { version = "0.11", features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12.8", features = ["json", "rustls-tls"] }
+serde = { version = "1.0.210", features = ["derive"] }
+http = "1.1.0"

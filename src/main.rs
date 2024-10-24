@@ -15,9 +15,12 @@ extern crate dotenv_codegen;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let token = dotenv!("DISCORD_ACCESS_TOKEN").to_string();
     let super_properties_header = dotenv!("DISCORD_SUPER_PROPERTIES").to_string();
+    let cookie = dotenv!("DISCORD_SUPER_PROPERTIES").to_string();
+    let user_agent = dotenv!("USER_AGENT").to_string();
 
     let base_path = dotenv!("BASE_PATH").to_string();
     let used_images_path = dotenv!("USED_IMAGES_PATH").to_string();
+
     let app_id = dotenv!("APP_ID").to_string().parse::<i32>().unwrap();
     let api_hash = dotenv!("API_HASH").to_string();
     let session_file = dotenv!("SESSION_FILE").to_string();
@@ -27,7 +30,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let repository = FileRepository::new();
     let storage = ImageStorage::new(base_path, used_images_path, repository);
 
-    let discord_client = DiscordClient::new(token, super_properties_header);
+    let discord_client = DiscordClient::new(token, super_properties_header, cookie, user_agent);
     let telegram_client = TelegramClient::create(app_id, api_hash, session_file).await?;
     telegram_client
         .auth(phone, password, get_verification_code)
